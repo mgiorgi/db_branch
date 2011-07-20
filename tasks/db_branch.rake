@@ -61,12 +61,17 @@ def restore_database_for_branch(branch)
   config = current_db_config
   pathname = branch_dump_pathname(branch)
   fatal_error!("No db dump exists for current branch!") unless pathname.exist?
-  restore_cmd = "/usr/bin/env mysql -u#{config['username']}"
-  restore_cmd << " -p'#{config['password']}'" unless config['password'].blank?
-  restore_cmd << " #{config['database']} < #{pathname}"
-  Rake::Task['db:drop'].invoke
-  Rake::Task['db:create'].invoke
+  auth_credentials = "-u#{config['username']}"
+  auth_credentials << " -p'#{config['password']}'" unless config['password'].blank?
+  drop_cmd = "mysqladmin -f #{auth_credentials} drop #{config['database']}"
+  create_cmd = "mysqladmin -f #{auth_credentials} create #{config['database']}"
+  restore_cmd = "/usr/bin/env mysql #{auth_credentials} #{config['database']} < #{pathname}"
+  system(drop_cmd)
+  puts "Command being executed: #{drop_cmd}"
+  system(create_cmd)
+  puts "Command being executed: #{create_cmd}"
   system(restore_cmd)
+  puts "Command being executed: #{restore_cmd}"
 end
 
 def current_db_config
