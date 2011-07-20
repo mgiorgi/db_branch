@@ -19,8 +19,7 @@ namespace :db do
   
     desc "Lists all branch-specific db dumps"
     task :list => :environment do
-      dir = Pathname("#{RAILS_ROOT}/tmp/branch-dumps")
-      dir.children.each {|c| puts c.basename } if dir.exist?
+      list_files("#{RAILS_ROOT}/tmp/branch-dumps")
     end
   
   end
@@ -34,6 +33,18 @@ end
 
 def branch_dump_pathname(branch)
   Pathname("#{RAILS_ROOT}/tmp/branch-dumps/#{branch}-#{RAILS_ENV}.sql")
+end
+
+def list_files(path, prefix = '')
+  dir = Pathname(path)
+  dir.children.each do |c|
+    if File::directory?(c.to_s)
+      new_prefix = prefix.present? ? "#{prefix}/#{c.basename.to_s}" : c.basename.to_s
+      list_files(c.to_s, new_prefix)
+    else
+      puts "#{(prefix+'/') if prefix.present?}#{c.basename}"
+    end
+  end if dir.exist?
 end
 
 def dump_database_for_branch(branch)
